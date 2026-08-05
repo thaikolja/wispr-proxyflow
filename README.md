@@ -1,50 +1,68 @@
-# Wispr Proxyflow
+# Wispr Pro — Wispr Flow → Pro
 
-Single-file Python tool (mitmproxy addon + CLI) that starts a local
-intercepting proxy and rewrites Wispr Flow's subscription API response so
-the app shows the **Pro** plan (`plan: FLOW_PRO_MONTHLY`, `status: active`).
-Everything runs locally; nothing is sent to Wispr's servers on your behalf. macOS only. Requires the original [Wispr Flow](https://wisprflow.ai) app.
+![Version](https://img.shields.io/github/v/release/thaikolja/wispr-proxyflow?label=version)
+![Platform](https://img.shields.io/badge/platform-macOS-black)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![License](https://img.shields.io/github/license/thaikolja/wispr-proxyflow)
+![CI](https://img.shields.io/github/actions/workflow/status/thaikolja/wispr-proxyflow/ci.yml)
 
-## Quick start
+A small, single-file Python tool for macOS. It starts a local proxy and
+rewrites Wispr Flow's subscription response, so the app shows the **Pro**
+plan (`plan: FLOW_PRO_MONTHLY`, `status: active`).
+
+Everything runs on your Mac. Nothing is sent to Wispr's servers on your
+behalf. You still need the original [Wispr Flow](https://wisprflow.ai) app.
+
+---
+
+## Quick Start
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"          # dev deps: pytest, mitmproxy, pyinstaller
+pip install -e ".[dev]"
 
-python3 wispr_pro.py start       # proxy + relaunch Wispr Flow → Pro
-python3 wispr_pro.py status      # proxy / app state
+python3 wispr_pro.py start       # start proxy + relaunch Wispr Flow → Pro
+python3 wispr_pro.py status      # check proxy / app state
 python3 wispr_pro.py stop        # stop proxy + quit Wispr Flow
 ```
 
-First run creates a CA under `~/.wispr_pro/`. If the app can't connect,
-trust it once: `python3 wispr_pro.py trust` (asks for your password).
+The first run creates a CA under `~/.wispr_pro/`. If the app cannot
+connect, trust the CA once:
 
-Run in the background:
+```bash
+python3 wispr_pro.py trust       # asks for your password
+```
+
+To run the proxy in the background:
 
 ```bash
 nohup python3 wispr_pro.py start >/tmp/wispr-pro.log 2>&1 &
 ```
 
-## Build the macOS app (Apple Silicon)
+## Build The macOS App
 
-One entrypoint, everything bundled (Python + mitmproxy):
+One command builds a ready-to-use `.app` for Apple Silicon (Python and
+mitmproxy are bundled inside):
 
 ```bash
 python3 build_app.py                        # dist/Wispr Pro.app (arm64)
-python3 build_app.py --arch universal2      # arm64 + Intel fat binary
-python3 build_app.py --name "Wispr Pro"
+python3 build_app.py --arch universal2      # arm64 + Intel
+python3 build_app.py --name "Wispr Pro"     # custom name
 ```
 
 Double-click `dist/Wispr Pro.app` to start the proxy in the background
-(logs: `~/.wispr_pro/proxy.log`), or use its CLI directly:
+(logs go to `~/.wispr_pro/proxy.log`). Or use its CLI directly:
 
 ```bash
 "dist/Wispr Pro.app/Contents/MacOS/wispr-pro" start --no-relaunch
 ```
 
+A ready-made `.dmg` with the `.app` inside is built and published
+automatically for every release (see the [GitHub Releases](https://github.com/thaikolja/wispr-proxyflow/releases) page).
+
 ## Commands
 
-| Command | What it does |
+| Command | What It Does |
 |---------|--------------|
 | `wispr_pro.py start` | Start proxy (foreground) + relaunch Wispr Flow |
 | `wispr_pro.py stop` | Stop proxy + quit Wispr Flow |
@@ -53,7 +71,9 @@ Double-click `dist/Wispr Pro.app` to start the proxy in the background
 | `wispr_pro.py selftest` | Verify the rewrite on a captured payload |
 | `wispr_pro.py restart` | Stop, then start again |
 
-## Customization flags
+## Customization Flags
+
+Flags come after the command:
 
 ```bash
 python3 wispr_pro.py start \
@@ -62,40 +82,42 @@ python3 wispr_pro.py start \
   --trial-days 30 \             # total_trial_days + daysLeft
   --trial-ends-at 1893456000 \  # unix timestamp
   --credits 99999 \             # credits
-  --no-subscribed \             # --subscribed / --no-subscribed (is_subscribed)
+  --no-subscribed \             # --subscribed / --no-subscribed
   --days-left 30 \              # daysLeft only
   --marker total_trial_days \   # JSON key that triggers the rewrite
-  --host 127.0.0.1 --port 8080 \# proxy bind address
-  --ca-dir ~/.wispr_pro \       # state dir (config, CA, pid)
+  --host 127.0.0.1 --port 8080 \# proxy address
+  --ca-dir ~/.wispr_pro \       # state folder (config, CA, pid)
   --app "/Applications/Wispr Flow.app" \
-  --no-relaunch                 # don't relaunch Wispr Flow
+  --no-relaunch                 # do not relaunch Wispr Flow
 ```
 
-Persistent values live in `~/.wispr_pro/config.toml` (created on first
-`start`); flags override them.
+Run `python3 wispr_pro.py start --help` for the full list.
 
-## How it works
+For permanent settings, edit `~/.wispr_pro/config.toml` (created on first
+start). Flags always win over the config file.
 
-1. A local mitmproxy rewrites responses to
-   `/api/v1/payment/subscription` — if the body contains the marker key
-   (`total_trial_days`) it is patched (plan/status/credits/…).
+## How It Works
+
+1. A local mitmproxy rewrites responses to `/api/v1/payment/subscription`.
+   If the body contains the marker key (`total_trial_days`), the plan,
+   status, credits and trial values are replaced.
 2. Wispr Flow is relaunched with `--proxy-server=http://127.0.0.1:8080
-   --ignore-certificate-errors` so its traffic goes through the proxy.
-3. Log lines look like:
+   --ignore-certificate-errors`, so its traffic goes through the proxy.
+3. Successful rewrites look like this in the log:
    `[PRO] rewrote /api/v1/payment/subscription?...: {...FLOW_BASIC...} -> {...FLOW_PRO_MONTHLY...}`
 
-Only the app's *displayed* state changes. Unrelated responses, non-JSON
-payloads and other hosts are passed through untouched.
+Only what the app *displays* changes. Other hosts, endpoints and non-JSON
+payloads pass through untouched.
 
-## Project layout
+## Project Layout
 
 ```
 wispr_pro.py          # the tool: addon + CLI (single file)
 build_app.py          # build entrypoint → dist/<name>.app
 assets/icon/          # app icon (.icns)
-tests/                # pytest (rewrite logic, no mitmproxy needed)
-pyproject.toml        # dev deps + pytest config
-.github/workflows/    # CI: pytest + CLI smoke
+docs/                 # Nuxt documentation site
+tests/                # pytest suite (no mitmproxy needed)
+.github/workflows/    # CI + DMG release builds
 ```
 
 ## Development
@@ -106,10 +128,10 @@ pytest -q
 python3 wispr_pro.py selftest
 ```
 
-State dir `~/.wispr_pro/` (config.toml, proxy.pid, mitmproxy/ CA) is never
-committed. `dist/`, `build/`, `.venv/` are gitignored.
+The state folder `~/.wispr_pro/` (config, CA, pid) is never committed.
+`dist/`, `build/`, `.venv/` are gitignored.
 
-## Notes
+## License
 
-- Educational project — it does not modify the Wispr Flow app itself and
-  does not claim to. MIT licensed.
+MIT — see [LICENSE](LICENSE). Educational project: it does not modify the
+Wispr Flow app itself.
