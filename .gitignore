@@ -16,6 +16,7 @@ release/
 htmlcov/
 .tox/
 .nox/
+AGENTS.md
 
 # PyInstaller
 *.spec

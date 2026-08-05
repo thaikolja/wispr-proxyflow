@@ -125,11 +125,14 @@ tests/                # pytest suite (no mitmproxy needed)
 ```bash
 pip install -e ".[dev]"
 pytest -q
+ruff check . && ruff format --check .
+mypy wispr_pro.py build_app.py
 python3 wispr_pro.py selftest
 ```
 
 The state folder `~/.wispr_pro/` (config, CA, pid) is never committed.
-`dist/`, `build/`, `.venv/` are gitignored.
+`dist/`, `build/`, `.venv/` are gitignored. See [CHANGELOG.md](CHANGELOG.md)
+for release history.
 
 ## License
 

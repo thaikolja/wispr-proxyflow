@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """Wispr Flow -> Pro — local MITM helper (single file, macOS).
 
 Starts a local intercepting proxy that rewrites Wispr Flow's subscription
@@ -72,18 +73,22 @@ log = logging.getLogger("wispr_pro")
 # paths + config
 # ---------------------------------------------------------------------------
 def conf_dir() -> Path:
+    """Path to the mitmproxy config and CA directory."""
     return CA_DIR / "mitmproxy"
 
 
 def config_file() -> Path:
+    """Path to the persistent config.toml."""
     return CA_DIR / "config.toml"
 
 
 def pid_file() -> Path:
+    """Path to the proxy PID file."""
     return CA_DIR / "proxy.pid"
 
 
 def ca_cert() -> Path:
+    """Path to the mitmproxy CA certificate."""
     return conf_dir() / "mitmproxy-ca-cert.pem"
 
 
@@ -102,6 +107,7 @@ marker = "{DEFAULT_MARKER}"
 
 
 def write_config() -> None:
+    """Create the default config.toml if missing."""
     CA_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     path = config_file()
     if not path.is_file():
@@ -110,7 +116,7 @@ def write_config() -> None:
 
 
 def load_patch(config_path: Path | None = None, overrides: dict | None = None) -> dict:
-    """defaults <- config.toml [rewrite] <- CLI overrides (days_left -> daysLeft)."""
+    """Defaults <- config.toml [rewrite] <- CLI overrides (days_left -> daysLeft)."""
     patch = deepcopy(DEFAULT_REWRITE)
     try:
         import tomllib
@@ -137,7 +143,11 @@ def load_patch(config_path: Path | None = None, overrides: dict | None = None) -
     return patch
 
 
-def rewrite_body(body: bytes, patch: dict | None = None, marker: str = DEFAULT_MARKER) -> tuple[bytes, dict] | None:
+def rewrite_body(
+    body: bytes,
+    patch: dict | None = None,
+    marker: str = DEFAULT_MARKER,
+) -> tuple[bytes, dict] | None:
     """Return (rewritten body, original values) if this is a subscription payload."""
     if marker.encode() not in body:
         return None
@@ -166,7 +176,8 @@ except ImportError:
 class WisprProAddon:
     """Rewrite Wispr Flow subscription responses to the configured profile."""
 
-    def response(self, flow: "http.HTTPFlow") -> None:
+    def response(self, flow: http.HTTPFlow) -> None:
+        """Patch subscription responses that carry the marker key."""
         if http is None or flow.response is None or flow.response.content is None:
             return
         patch = load_patch()
@@ -191,6 +202,7 @@ addons = [WisprProAddon()] if http is not None else []
 # process helpers
 # ---------------------------------------------------------------------------
 def port_open(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> bool:
+    """Return True if the proxy port accepts connections."""
     try:
         with socket.create_connection((host, port), timeout=1):
             return True
@@ -199,6 +211,7 @@ def port_open(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> bool:
 
 
 def daemon_pid() -> int | None:
+    """Return the live proxy PID from the pid file, or None."""
     path = pid_file()
     if not path.is_file():
         return None
@@ -214,19 +227,23 @@ def daemon_pid() -> int | None:
 
 
 def write_pid() -> None:
+    """Write the current process PID to the pid file."""
     CA_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     pid_file().write_text(str(os.getpid()))
 
 
 def remove_pid() -> None:
+    """Remove the pid file if present."""
     pid_file().unlink(missing_ok=True)
 
 
 def app_running() -> bool:
+    """Return True if the Wispr Flow app process is running."""
     return subprocess.run(["pgrep", "-f", PGREP_PATTERN], capture_output=True).returncode == 0
 
 
 def quit_app() -> None:
+    """Quit Wispr Flow gracefully, force-kill as a fallback."""
     subprocess.run(["osascript", "-e", f'quit app "{APP_NAME}"'], capture_output=True)
     for _ in range(int(3.0 / 0.5)):
         if not app_running():
@@ -237,6 +254,7 @@ def quit_app() -> None:
 
 
 def relaunch_app(host: str, port: int) -> None:
+    """Relaunch Wispr Flow through the local proxy."""
     if not APP_BUNDLE.is_dir():
         raise SystemExit(f"[error] app not found at {APP_BUNDLE}")
     quit_app()
@@ -255,14 +273,21 @@ def relaunch_app(host: str, port: int) -> None:
 
 
 def trust_hint() -> None:
+    """Print a hint when the proxy CA is not trusted yet."""
     if not ca_cert().is_file():
-        print("[trust] CA not generated yet - run `start` once, then `trust` if the app fails to connect")
+        print(
+            "[trust] CA not generated yet - run `start` once, then `trust` "
+            "if the app fails to connect",
+        )
         return
     for cn in ("Wispr Bypass CA", "mitmproxy"):
-        if subprocess.run(
-            ["security", "find-certificate", "-c", cn, "-a", "-Z"],
-            capture_output=True,
-        ).returncode == 0:
+        if (
+            subprocess.run(
+                ["security", "find-certificate", "-c", cn, "-a", "-Z"],
+                capture_output=True,
+            ).returncode
+            == 0
+        ):
             print("[trust] CA already trusted in keychain")
             return
     print(f"[trust] CA not trusted yet - run: python3 {sys.argv[0]} trust")
@@ -272,6 +297,7 @@ def trust_hint() -> None:
 # commands
 # ---------------------------------------------------------------------------
 def cmd_start(args: argparse.Namespace) -> int:
+    """Start the proxy in-process and relaunch Wispr Flow."""
     global CA_DIR, APP_BUNDLE, MARKER, _OVERRIDES
     host = args.host or DEFAULT_HOST
     port = args.port or DEFAULT_PORT
@@ -305,7 +331,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     if port_open(host, port):
         raise SystemExit(
             f"[error] port {host}:{port} already in use - is a proxy already running? "
-            f"(check `python3 {Path(sys.argv[0]).name} status`)"
+            f"(check `python3 {Path(sys.argv[0]).name} status`)",
         )
     write_pid()
     trust_hint()
@@ -313,7 +339,7 @@ def cmd_start(args: argparse.Namespace) -> int:
         relaunch_app(host, port)
     print(
         f"[start] serving on {host}:{port} - Ctrl+C to stop, "
-        f"or `python3 {Path(sys.argv[0]).name} stop` from another terminal"
+        f"or `python3 {Path(sys.argv[0]).name} stop` from another terminal",
     )
     try:
         return cmd_serve(host, port)
@@ -329,7 +355,7 @@ def cmd_serve(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> int:
         from mitmproxy.options import Options
         from mitmproxy.tools.dump import DumpMaster
     except ImportError as exc:
-        raise SystemExit(f"[error] mitmproxy missing in this environment: {exc}")
+        raise SystemExit(f"[error] mitmproxy missing in this environment: {exc}") from exc
 
     async def _amain() -> None:
         options = Options()
@@ -350,6 +376,7 @@ def cmd_serve(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> int:
 
 
 def cmd_stop(_args: argparse.Namespace) -> int:
+    """Stop the running proxy and quit Wispr Flow."""
     pid = daemon_pid()
     if pid:
         os.kill(pid, 15)
@@ -373,9 +400,10 @@ def cmd_stop(_args: argparse.Namespace) -> int:
 
 
 def cmd_status(_args: argparse.Namespace) -> int:
+    """Print proxy, port and app state."""
     pid = daemon_pid()
     up = pid is not None and port_open()
-    print(f"proxy:   {'up (pid %d)' % pid if up else 'down'}")
+    print(f"proxy:   {f'up (pid {pid})' if up else 'down'}")
     print(f"port:    {DEFAULT_HOST}:{DEFAULT_PORT} {'open' if port_open() else 'closed'}")
     print(f"app:     {'running' if app_running() else 'not running'}")
     print(f"config:  {config_file()}")
@@ -384,6 +412,7 @@ def cmd_status(_args: argparse.Namespace) -> int:
 
 
 def cmd_trust(_args: argparse.Namespace) -> int:
+    """Trust the proxy CA in the System keychain (requires sudo)."""
     if not ca_cert().is_file():
         raise SystemExit("[error] no CA yet - run `start` once first")
     rc = subprocess.run(
@@ -397,13 +426,14 @@ def cmd_trust(_args: argparse.Namespace) -> int:
             "-k",
             "/Library/Keychains/System.keychain",
             str(ca_cert()),
-        ]
+        ],
     ).returncode
     print("[trust] done" if rc == 0 else "[error] trust failed")
     return rc
 
 
 def cmd_selftest(_args: argparse.Namespace) -> int:
+    """Verify the rewrite logic on a captured payload."""
     payload = {
         "credits": 2,
         "is_student": False,
@@ -427,18 +457,32 @@ def cmd_selftest(_args: argparse.Namespace) -> int:
 # CLI
 # ---------------------------------------------------------------------------
 def _add_common(p: argparse.ArgumentParser) -> None:
+    """Register shared proxy and rewrite flags on the given parser."""
     g = p.add_argument_group("proxy")
     g.add_argument("--host", default=None, help=f"proxy bind host (default {DEFAULT_HOST})")
     g.add_argument("--port", type=int, default=None, help=f"proxy port (default {DEFAULT_PORT})")
     g.add_argument("--ca-dir", metavar="DIR", help=f"state dir (default {DEFAULT_CA_DIR})")
-    g.add_argument("--app", metavar="PATH", help=f"Wispr Flow app bundle (default {DEFAULT_APP_BUNDLE})")
+    g.add_argument(
+        "--app",
+        metavar="PATH",
+        help=f"Wispr Flow app bundle (default {DEFAULT_APP_BUNDLE})",
+    )
     g.add_argument("--no-relaunch", action="store_true", help="do not relaunch Wispr Flow")
     g = p.add_argument_group("rewrite")
-    g.add_argument("--marker", metavar="KEY", help=f"JSON key that triggers rewrite (default {DEFAULT_MARKER})")
+    g.add_argument(
+        "--marker",
+        metavar="KEY",
+        help=f"JSON key that triggers rewrite (default {DEFAULT_MARKER})",
+    )
     g.add_argument("--status", metavar="VALUE", help="forced status (active, trialing, ...)")
     g.add_argument("--plan", metavar="PLAN", help=f"forced plan, one of: {', '.join(PLANS)}")
     g.add_argument("--trial-days", type=int, metavar="N", help="forced total_trial_days + daysLeft")
-    g.add_argument("--trial-ends-at", type=int, metavar="UNIX", help="forced trial_ends_at timestamp")
+    g.add_argument(
+        "--trial-ends-at",
+        type=int,
+        metavar="UNIX",
+        help="forced trial_ends_at timestamp",
+    )
     g.add_argument("--credits", type=int, metavar="N", help="forced credits")
     g.add_argument(
         "--subscribed",
@@ -450,13 +494,12 @@ def _add_common(p: argparse.ArgumentParser) -> None:
 
 
 def main() -> int:
+    """Parse CLI arguments and dispatch to the matching command."""
     parser = argparse.ArgumentParser(
         prog="wispr_pro.py",
         description="Wispr Flow -> Pro: local MITM that rewrites the subscription response.",
     )
-    parser.add_argument(
-        "--serve", action="store_true", help=argparse.SUPPRESS, dest="serve_flag"
-    )
+    parser.add_argument("--serve", action="store_true", help=argparse.SUPPRESS, dest="serve_flag")
     parser.add_argument("--host", default=DEFAULT_HOST, help=argparse.SUPPRESS)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help=argparse.SUPPRESS)
 
@@ -469,8 +512,12 @@ def main() -> int:
     restart.set_defaults(func=None)
     sub.add_parser("stop", help="stop proxy + quit Wispr Flow").set_defaults(func=cmd_stop)
     sub.add_parser("status", help="show proxy / app state").set_defaults(func=cmd_status)
-    sub.add_parser("trust", help="trust proxy CA in System keychain (sudo)").set_defaults(func=cmd_trust)
-    sub.add_parser("selftest", help="verify the rewrite on a captured payload").set_defaults(func=cmd_selftest)
+    sub.add_parser("trust", help="trust proxy CA in System keychain (sudo)").set_defaults(
+        func=cmd_trust,
+    )
+    sub.add_parser("selftest", help="verify the rewrite on a captured payload").set_defaults(
+        func=cmd_selftest,
+    )
 
     args = parser.parse_args()
     if args.serve_flag:

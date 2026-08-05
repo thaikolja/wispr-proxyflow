@@ -17,7 +17,7 @@ Requires: Python 3.11+, mitmproxy, PyInstaller in the current environment:
 from __future__ import annotations
 
 import argparse
-import os
+import importlib.util
 import plistlib
 import shutil
 import subprocess
@@ -35,26 +35,28 @@ LAUNCHER_NAME = "wispr-pro-launcher"
 
 
 def _check_deps() -> None:
+    """Fail with an install hint if build dependencies are missing."""
     missing = [pkg for pkg in ("mitmproxy", "PyInstaller") if not _importable(pkg)]
     if missing:
         raise SystemExit(
             f"[error] missing build dependencies: {', '.join(missing)}\n"
-            f"Install them with: {sys.executable} -m pip install mitmproxy pyinstaller"
+            f"Install them with: {sys.executable} -m pip install mitmproxy pyinstaller",
         )
 
 
 def _importable(pkg: str) -> bool:
-    import importlib.util
-
+    """Return True if the package can be imported in this environment."""
     return importlib.util.find_spec(pkg) is not None
 
 
 def _run(cmd: list[str]) -> None:
+    """Run a command in the project root, failing the build on error."""
     print(f"[build] $ {' '.join(cmd)}")
     subprocess.run(cmd, check=True, cwd=ROOT)
 
 
 def _build_binary(arch: str, clean: bool) -> Path:
+    """Build the PyInstaller onefile binary and return its path."""
     out = ROOT / "dist" / BINARY_NAME
     if clean:
         shutil.rmtree(out, ignore_errors=True)
@@ -78,6 +80,7 @@ def _build_binary(arch: str, clean: bool) -> Path:
 
 
 def _write_info_plist(app: Path, name: str) -> None:
+    """Write the app bundle Info.plist (background agent, no dock icon)."""
     info = {
         "CFBundleName": name,
         "CFBundleDisplayName": name,
@@ -90,13 +93,16 @@ def _write_info_plist(app: Path, name: str) -> None:
         "LSMinimumSystemVersion": "12.0",
         "LSUIElement": True,
         "NSHighResolutionCapable": True,
-        "NSAppleEventsUsageDescription": "Needed to quit and relaunch Wispr Flow through the local proxy.",
+        "NSAppleEventsUsageDescription": (
+            "Needed to quit and relaunch Wispr Flow through the local proxy."
+        ),
     }
     with (app / "Contents" / "Info.plist").open("wb") as fh:
         plistlib.dump(info, fh)
 
 
 def _write_launcher(app: Path) -> None:
+    """Write the double-click launcher that starts the proxy in the background."""
     script = f"""#!/bin/sh
 # Double-click entry: start the Wispr Pro proxy in the background.
 # Logs go to ${{WISPR_PRO_LOG:-~/.wispr_pro/proxy.log}}.
@@ -111,6 +117,7 @@ exec "$DIR/{BINARY_NAME}" start >>"$LOG" 2>&1
 
 
 def _assemble_app(binary: Path, name: str, icon: Path | None) -> Path:
+    """Assemble the .app bundle around the binary, then ad-hoc codesign it."""
     app = ROOT / "dist" / f"{name}.app"
     shutil.rmtree(app, ignore_errors=True)
     contents = app / "Contents"
@@ -127,7 +134,10 @@ def _assemble_app(binary: Path, name: str, icon: Path | None) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build the Wispr Pro .app for macOS (Apple Silicon).")
+    """Parse build options and produce dist/<name>.app."""
+    parser = argparse.ArgumentParser(
+        description="Build the Wispr Pro .app for macOS (Apple Silicon).",
+    )
     parser.add_argument("--name", default="Wispr Pro", help="app name (default: Wispr Pro)")
     parser.add_argument(
         "--arch",
@@ -150,7 +160,7 @@ def main() -> int:
 
     size = sum(p.stat().st_size for p in app.rglob("*")) / 1_000_000
     print(f"[done] {app} ({size:.0f} MB)")
-    print(f"       double-click to start the proxy, or use the CLI:")
+    print("       double-click to start the proxy, or use the CLI:")
     print(f"       {app / 'Contents' / 'MacOS' / BINARY_NAME} start|stop|status|trust|selftest")
     return 0
 

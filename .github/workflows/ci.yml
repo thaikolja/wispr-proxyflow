@@ -16,8 +16,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python -m pip install pytest
+      - run: python -m pip install pytest ruff mypy
       - run: pytest -q
+      - run: ruff check . && ruff format --check .
+      - run: mypy wispr_pro.py build_app.py
       - run: python wispr_pro.py selftest
 
   smoke-macos:
