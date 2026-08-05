@@ -1,21 +1,39 @@
-# Wispr Pro — Wispr Flow → Pro
+# Wispr Proxyflow
 
-![Version](https://img.shields.io/github/v/release/thaikolja/wispr-proxyflow?label=version)
-![Platform](https://img.shields.io/badge/platform-macOS-black)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![License](https://img.shields.io/github/license/thaikolja/wispr-proxyflow)
-![CI](https://img.shields.io/github/actions/workflow/status/thaikolja/wispr-proxyflow/ci.yml)
+![Version](https://img.shields.io/github/v/release/thaikolja/wispr-proxyflow?label=version) ![Platform](https://img.shields.io/badge/platform-macOS-black) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) ![License](https://img.shields.io/github/license/thaikolja/wispr-proxyflow) ![CI](https://img.shields.io/github/actions/workflow/status/thaikolja/wispr-proxyflow/ci.yml)
 
-A small, single-file Python tool for macOS. It starts a local proxy and
-rewrites Wispr Flow's subscription response, so the app shows the **Pro**
-plan (`plan: FLOW_PRO_MONTHLY`, `status: active`).
+**Wispr Proxyflow** is a small, single-file tool for macOS. It starts a
+local proxy and rewrites Wispr Flow's subscription response, so the app
+shows the **Pro** plan.
 
 Everything runs on your Mac. Nothing is sent to Wispr's servers on your
 behalf. You still need the original [Wispr Flow](https://wisprflow.ai) app.
 
 ---
 
-## Quick Start
+## The Easiest Way To Start
+
+1. Go to [Releases](https://github.com/thaikolja/wispr-proxyflow/releases)
+   and download the newest `.dmg`.
+2. Open the `.dmg` and drag `Wispr Proxyflow.app` to your Applications
+   folder.
+3. Double-click the app. It starts the proxy and relaunches Wispr Flow —
+   the plan shows **Pro**.
+
+That's it. Logs go to `~/.wispr_pro/proxy.log`.
+
+> First time opening a downloaded app? Right-click it → **Open** (macOS
+> blocks unsigned downloads otherwise).
+
+To stop the proxy: open Terminal and run:
+
+```bash
+"/Applications/Wispr Proxyflow.app/Contents/MacOS/wispr-pro" stop
+```
+
+## Quick Start (For Developers)
+
+Run it straight from the source:
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -33,7 +51,7 @@ connect, trust the CA once:
 python3 wispr_pro.py trust       # asks for your password
 ```
 
-To run the proxy in the background:
+Run the proxy in the background:
 
 ```bash
 nohup python3 wispr_pro.py start >/tmp/wispr-pro.log 2>&1 &
@@ -45,16 +63,9 @@ One command builds a ready-to-use `.app` for Apple Silicon (Python and
 mitmproxy are bundled inside):
 
 ```bash
-python3 build_app.py                        # dist/Wispr Pro.app (arm64)
-python3 build_app.py --arch universal2      # arm64 + Intel
-python3 build_app.py --name "Wispr Pro"     # custom name
-```
-
-Double-click `dist/Wispr Pro.app` to start the proxy in the background
-(logs go to `~/.wispr_pro/proxy.log`). Or use its CLI directly:
-
-```bash
-"dist/Wispr Pro.app/Contents/MacOS/wispr-pro" start --no-relaunch
+python3 build_app.py                         # dist/Wispr Proxyflow.app (arm64)
+python3 build_app.py --arch universal2       # arm64 + Intel
+python3 build_app.py --name "Wispr Proxyflow" # custom name
 ```
 
 A ready-made `.dmg` with the `.app` inside is built and published

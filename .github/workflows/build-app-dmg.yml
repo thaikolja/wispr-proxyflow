@@ -34,15 +34,15 @@ jobs:
           VER="${GITHUB_REF_NAME#v}"
           [ -n "$VER" ] || VER="dev"
           hdiutil create \
-            -volname "Wispr Pro" \
-            -srcfolder "dist/Wispr Pro.app" \
+            -volname "Wispr Proxyflow" \
+            -srcfolder "dist/Wispr Proxyflow.app" \
             -ov -format UDZO \
-            "dist/Wispr-Pro-${VER}.dmg"
+            "dist/Wispr-Proxyflow-${VER}.dmg"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: wispr-pro-dmg
+          name: wispr-proxyflow-dmg
           path: dist/*.dmg
           if-no-files-found: error
 

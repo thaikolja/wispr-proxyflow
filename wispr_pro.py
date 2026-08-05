@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Wispr Flow -> Pro — local MITM helper (single file, macOS).
+"""Wispr Proxyflow — local MITM helper (single file, macOS).
 
 Starts a local intercepting proxy that rewrites Wispr Flow's subscription
 API response so the app shows the Pro plan (plan: FLOW_PRO_MONTHLY,
@@ -93,7 +93,7 @@ def ca_cert() -> Path:
 
 
 DEFAULT_CONFIG_TOML = f"""\
-# Wispr Pro bypass config (default: ~/.wispr_pro/config.toml)
+# Wispr Proxyflow config (default: ~/.wispr_pro/config.toml)
 [rewrite]
 status = "active"
 plan = "FLOW_PRO_MONTHLY"

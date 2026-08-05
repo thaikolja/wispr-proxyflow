@@ -2,8 +2,13 @@ export default defineNuxtConfig({
   modules: ["@nuxt/content"],
   app: {
     head: {
-      title: "Wispr Pro",
-      meta: [{ name: "description", content: "Wispr Flow → Pro: local MITM helper — docs" }],
+      title: "Wispr Proxyflow",
+      meta: [
+        {
+          name: "description",
+          content: "Wispr Proxyflow — Wispr Flow → Pro: local MITM helper — docs",
+        },
+      ],
     },
   },
   content: {

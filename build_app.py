@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Build the macOS Wispr Pro .app (Apple Silicon) from wispr_pro.py.
+"""Build the Wispr Proxyflow .app (Apple Silicon) from wispr_pro.py.
 
 Single entrypoint: produces dist/<name>.app containing the onefile proxy
 binary, a double-click launcher (starts the proxy in the background), the
 app icon and an Info.plist (LSUIElement, no dock icon).
 
 Usage:
-    python3 build_app.py                     # dist/Wispr Pro.app (arm64)
+    python3 build_app.py                     # dist/Wispr Proxyflow.app (arm64)
     python3 build_app.py --arch universal2   # arm64 + x86_64 fat binary
-    python3 build_app.py --name "Wispr Pro"
+    python3 build_app.py --name "Wispr Proxyflow"
 
 Requires: Python 3.11+, mitmproxy, PyInstaller in the current environment:
     python3 -m pip install mitmproxy pyinstaller
@@ -29,7 +29,7 @@ SCRIPT = ROOT / "wispr_pro.py"
 DEFAULT_ICON = ROOT / "assets" / "icon" / "AppIcon.icns"
 
 VERSION = "1.0.0"
-BUNDLE_ID = "com.local.wispr-pro"
+BUNDLE_ID = "com.local.wispr-proxyflow"
 BINARY_NAME = "wispr-pro"
 LAUNCHER_NAME = "wispr-pro-launcher"
 
@@ -104,7 +104,7 @@ def _write_info_plist(app: Path, name: str) -> None:
 def _write_launcher(app: Path) -> None:
     """Write the double-click launcher that starts the proxy in the background."""
     script = f"""#!/bin/sh
-# Double-click entry: start the Wispr Pro proxy in the background.
+# Double-click entry: start the Wispr Proxyflow proxy in the background.
 # Logs go to ${{WISPR_PRO_LOG:-~/.wispr_pro/proxy.log}}.
 DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG="${{WISPR_PRO_LOG:-$HOME/.wispr_pro/proxy.log}}"
@@ -136,9 +136,13 @@ def _assemble_app(binary: Path, name: str, icon: Path | None) -> Path:
 def main() -> int:
     """Parse build options and produce dist/<name>.app."""
     parser = argparse.ArgumentParser(
-        description="Build the Wispr Pro .app for macOS (Apple Silicon).",
+        description="Build the Wispr Proxyflow .app for macOS (Apple Silicon).",
     )
-    parser.add_argument("--name", default="Wispr Pro", help="app name (default: Wispr Pro)")
+    parser.add_argument(
+        "--name",
+        default="Wispr Proxyflow",
+        help="app name (default: Wispr Proxyflow)",
+    )
     parser.add_argument(
         "--arch",
         choices=("arm64", "universal2"),

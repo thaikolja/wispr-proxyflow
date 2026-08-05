@@ -1,11 +1,11 @@
 ---
-title: Wispr Pro
+title: Wispr Proxyflow
 description: Wispr Flow → Pro — local MITM helper documentation
 navigation:
   title: Home
 ---
 
-# Wispr Pro
+# Wispr Proxyflow
 
 Wispr Flow → Pro — a single-file Python tool (mitmproxy addon + CLI) that
 starts a local intercepting proxy and rewrites Wispr Flow's subscription API
