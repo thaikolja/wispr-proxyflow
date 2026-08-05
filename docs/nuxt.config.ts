@@ -1,6 +1,7 @@
 export default defineNuxtConfig({
   modules: ["@nuxt/content"],
   app: {
+    baseURL: "/wispr-proxyflow/",
     head: {
       title: "Wispr Proxyflow",
       meta: [
