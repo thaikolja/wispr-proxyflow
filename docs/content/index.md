@@ -11,15 +11,6 @@ Wispr Flow → Pro — a single-file Python tool (mitmproxy addon + CLI) that st
 
 Everything runs locally. Only the app's *displayed* state changes.
 
-::card
-#title
-Get started
-#description
-Install, run and build the app in a few commands.
-#link
-/2.installation
-::
-
 ## Repository layout
 
 | Path | Purpose |
@@ -33,8 +24,8 @@ Install, run and build the app in a few commands.
 
 ## Quick links
 
-- [Installation](/2.installation)
-- [Usage](/3.usage)
-- [Build & package](/4.build)
-- [Architecture](/5.architecture)
-- [Troubleshooting](/6.troubleshooting)
+- [Installation](/installation)
+- [Usage](/usage)
+- [Build & package](/build)
+- [Architecture](/architecture)
+- [Troubleshooting](/troubleshooting)

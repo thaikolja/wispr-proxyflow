@@ -9,10 +9,7 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "@nuxt/content": "^3.4.0",
+    "@nuxt-themes/docus": "^1.8.1",
     "nuxt": "^3.17.0"
-  },
-  "dependencies": {
-    "better-sqlite3": "^12.11.1"
   }
 }
