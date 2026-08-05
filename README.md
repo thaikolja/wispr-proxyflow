@@ -2,28 +2,21 @@
 
 ![Version](https://img.shields.io/github/v/release/thaikolja/wispr-proxyflow?label=version) ![Platform](https://img.shields.io/badge/platform-macOS-black) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) ![License](https://img.shields.io/github/license/thaikolja/wispr-proxyflow) ![CI](https://img.shields.io/github/actions/workflow/status/thaikolja/wispr-proxyflow/ci.yml)
 
-**Wispr Proxyflow** is a small, single-file tool for macOS. It starts a
-local proxy and rewrites Wispr Flow's subscription response, so the app
-shows the **Pro** plan.
+**Wispr Proxyflow** is a small, single-file tool for macOS. It starts a local proxy and rewrites Wispr Flow's subscription response, so the app shows the **Pro** plan.
 
-Everything runs on your Mac. Nothing is sent to Wispr's servers on your
-behalf. You still need the original [Wispr Flow](https://wisprflow.ai) app.
+Everything runs on your Mac. Nothing is sent to Wispr's servers on your behalf. You still need the original [Wispr Flow](https://wisprflow.ai) app.
 
 ---
 
 ## The Easiest Way To Start
 
-1. Go to [Releases](https://github.com/thaikolja/wispr-proxyflow/releases)
-   and download the newest `.dmg`.
-2. Open the `.dmg` and drag `Wispr Proxyflow.app` to your Applications
-   folder.
-3. Double-click the app. It starts the proxy and relaunches Wispr Flow —
-   the plan shows **Pro**.
+1. Go to [Releases](https://github.com/thaikolja/wispr-proxyflow/releases) and download the newest `.dmg`.
+2. Open the `.dmg` and drag `Wispr Proxyflow.app` to your Applications folder.
+3. Double-click the app. It starts the proxy and relaunches Wispr Flow — the plan shows **Pro**.
 
 That's it. Logs go to `~/.wispr_pro/proxy.log`.
 
-> First time opening a downloaded app? Right-click it → **Open** (macOS
-> blocks unsigned downloads otherwise).
+> First time opening a downloaded app? Right-click it → **Open** (macOS blocks unsigned downloads otherwise).
 
 To stop the proxy: open Terminal and run:
 
@@ -44,8 +37,7 @@ python3 wispr_pro.py status      # check proxy / app state
 python3 wispr_pro.py stop        # stop proxy + quit Wispr Flow
 ```
 
-The first run creates a CA under `~/.wispr_pro/`. If the app cannot
-connect, trust the CA once:
+The first run creates a CA under `~/.wispr_pro/`. If the app cannot connect, trust the CA once:
 
 ```bash
 python3 wispr_pro.py trust       # asks for your password
@@ -59,8 +51,7 @@ nohup python3 wispr_pro.py start >/tmp/wispr-pro.log 2>&1 &
 
 ## Build The macOS App
 
-One command builds a ready-to-use `.app` for Apple Silicon (Python and
-mitmproxy are bundled inside):
+One command builds a ready-to-use `.app` for Apple Silicon (Python and mitmproxy are bundled inside):
 
 ```bash
 python3 build_app.py                         # dist/Wispr Proxyflow.app (arm64)
@@ -68,8 +59,7 @@ python3 build_app.py --arch universal2       # arm64 + Intel
 python3 build_app.py --name "Wispr Proxyflow" # custom name
 ```
 
-A ready-made `.dmg` with the `.app` inside is built and published
-automatically for every release (see the [GitHub Releases](https://github.com/thaikolja/wispr-proxyflow/releases) page).
+A ready-made `.dmg` with the `.app` inside is built and published automatically for every release (see the [GitHub Releases](https://github.com/thaikolja/wispr-proxyflow/releases) page).
 
 ## Commands
 
@@ -104,21 +94,15 @@ python3 wispr_pro.py start \
 
 Run `python3 wispr_pro.py start --help` for the full list.
 
-For permanent settings, edit `~/.wispr_pro/config.toml` (created on first
-start). Flags always win over the config file.
+For permanent settings, edit `~/.wispr_pro/config.toml` (created on first start). Flags always win over the config file.
 
 ## How It Works
 
-1. A local mitmproxy rewrites responses to `/api/v1/payment/subscription`.
-   If the body contains the marker key (`total_trial_days`), the plan,
-   status, credits and trial values are replaced.
-2. Wispr Flow is relaunched with `--proxy-server=http://127.0.0.1:8080
-   --ignore-certificate-errors`, so its traffic goes through the proxy.
-3. Successful rewrites look like this in the log:
-   `[PRO] rewrote /api/v1/payment/subscription?...: {...FLOW_BASIC...} -> {...FLOW_PRO_MONTHLY...}`
+1. A local mitmproxy rewrites responses to `/api/v1/payment/subscription`. If the body contains the marker key (`total_trial_days`), the plan, status, credits and trial values are replaced.
+2. Wispr Flow is relaunched with `--proxy-server=http://127.0.0.1:8080 --ignore-certificate-errors`, so its traffic goes through the proxy.
+3. Successful rewrites look like this in the log: `[PRO] rewrote /api/v1/payment/subscription?...: {...FLOW_BASIC...} -> {...FLOW_PRO_MONTHLY...}`
 
-Only what the app *displays* changes. Other hosts, endpoints and non-JSON
-payloads pass through untouched.
+Only what the app *displays* changes. Other hosts, endpoints and non-JSON payloads pass through untouched.
 
 ## Project Layout
 
@@ -141,11 +125,8 @@ mypy wispr_pro.py build_app.py
 python3 wispr_pro.py selftest
 ```
 
-The state folder `~/.wispr_pro/` (config, CA, pid) is never committed.
-`dist/`, `build/`, `.venv/` are gitignored. See [CHANGELOG.md](CHANGELOG.md)
-for release history.
+The state folder `~/.wispr_pro/` (config, CA, pid) is never committed. `dist/`, `build/`, `.venv/` are gitignored. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Educational project: it does not modify the
-Wispr Flow app itself.
+MIT — see [LICENSE](LICENSE). Educational project: it does not modify the Wispr Flow app itself.

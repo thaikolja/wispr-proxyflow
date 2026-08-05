@@ -7,9 +7,7 @@ navigation:
 
 # Wispr Proxyflow
 
-Wispr Flow → Pro — a single-file Python tool (mitmproxy addon + CLI) that
-starts a local intercepting proxy and rewrites Wispr Flow's subscription API
-response so the app shows the **Pro** plan.
+Wispr Flow → Pro — a single-file Python tool (mitmproxy addon + CLI) that starts a local intercepting proxy and rewrites Wispr Flow's subscription API response so the app shows the **Pro** plan.
 
 Everything runs locally. Only the app's *displayed* state changes.
 
