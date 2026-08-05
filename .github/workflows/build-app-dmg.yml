@@ -1,0 +1,54 @@
+name: build-app-dmg
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build deps
+        run: python -m pip install mitmproxy pyinstaller pytest
+
+      - name: Tests + smoke
+        run: |
+          pytest -q
+          python wispr_pro.py selftest
+
+      - name: Build the .app (arm64)
+        run: python build_app.py
+
+      - name: Package the .dmg
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          [ -n "$VER" ] || VER="dev"
+          hdiutil create \
+            -volname "Wispr Pro" \
+            -srcfolder "dist/Wispr Pro.app" \
+            -ov -format UDZO \
+            "dist/Wispr-Pro-${VER}.dmg"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wispr-pro-dmg
+          path: dist/*.dmg
+          if-no-files-found: error
+
+      - name: Attach to GitHub Release (tagged builds)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.dmg
+          generate_release_notes: true

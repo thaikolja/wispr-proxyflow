@@ -1,0 +1,37 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+release/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# PyInstaller
+*.spec
+
+# Local secrets / generated certs (never commit)
+*.pem
+*.key
+*.p12
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local state / logs
+*.log
+.serena/
